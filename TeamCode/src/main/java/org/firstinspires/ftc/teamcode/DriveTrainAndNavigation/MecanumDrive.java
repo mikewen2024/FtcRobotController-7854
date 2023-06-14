@@ -74,7 +74,7 @@ public class MecanumDrive {
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]) / 2.0;
         if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
+                motorInputs [i] *=  POWER_MULTIPLIER / (2.0 * maxPowerLevel);
             }
         }
 
@@ -113,7 +113,7 @@ public class MecanumDrive {
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]);
         if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
+                motorInputs [i] *=  POWER_MULTIPLIER / (2.0 * maxPowerLevel);
             }
         }
 
