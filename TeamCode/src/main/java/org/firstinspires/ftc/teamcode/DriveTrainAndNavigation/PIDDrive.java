@@ -1,82 +1,78 @@
 package org.firstinspires.ftc.teamcode.DriveTrainAndNavigation;
 
-import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.MecanumDrive;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-// Provides different applications of PID
+public class PIDDrive implements Runnable{ // Needs to start new thread when starting path to enable manipulator functionalities
 
-@Config
-public class PIDDrive {
+    // P, I, D for x, y, rotation
+    // x and y relative to robot heading, not absolute
+    double [] P;
+//    double [] I;
+//    double [] D;
 
-    public double [] vars = {0.0, 0.0, 0.0};
-    public final double integralDecayConst = 0.9;
-    ElapsedTime timer;
+    // Distance tolerance
+    double tolerance; // In, x and y
+    double angleTolerance; // Will add later, just using x and y for now
 
-    public PIDDrive(double p, double i, double d){
-        this.vars [0] = p;
-        this.vars [1] = i;
-        this.vars [2] = d;
-    }
+    Telemetry telemetry;
+    public MecanumDrive drive;
+    public Odometry odometry;
+    double [] currentState = {0.0, 0.0, 0.0};
+    double [] targetState = {0.0, 0.0, 0.0};
+    double [] delta = {0.0, 0.0, 0.0};
 
-    class driveToPoint implements Runnable { // To run to certain location, running as seperate thread should allow other functionalities to be maintained
+    public PIDDrive(double [] P, /*double [] I, double [] D,*/ double tolerance, MecanumDrive drive, Odometry odometry, double [] targetState, Telemetry telemetry){
+        for(int i = 0; i < 3; i++){
+            this.P [i] = P [i];
+//            this.I [i] = I [i];
+//            this.D [i] = D [i];
 
-        // Each 2 long, can expand to 3 later
-        double [] targetState;
-        double [] currentState;
-        double [] previousState;
-
-        double [] delta;
-        double [] derivative = {0.0, 0.0, 0.0};
-        double [] integral = {0.0, 0.0, 0.0};
-        MecanumDrive drive;
-        Odometry odometry;
-        double threshold; // inches within target coordinate, will add radians later
-
-        // Must initiate simple path before running
-        public driveToPoint(double [] targetState, double [] currentState, double threshold, MecanumDrive drive, Odometry odometry){
-            for(int i = 0; i < 2; i++){
-                this.targetState [i] = targetState [i];
-                this.currentState [i] = currentState [i];
-
-                this.delta [i] = this.targetState [i] - this.currentState [i];
-            }
-
-            this.threshold = threshold;
-            this.drive = drive;
-            this.odometry = odometry;
+            this.targetState [i] = targetState [i];
         }
 
-        @Override
-        public void run() {
-            while(Math.sqrt(this.delta[0]*this.delta[0] + this.delta[1]*this.delta[1]) > threshold){ // Distance to target outside threshold
-                // Set powers, normalize to [-1.0, 1.0]
+        this.tolerance = tolerance;
 
+        // Just copying pointers
+        this.drive = drive;
+        this.odometry = odometry;
+        this.telemetry = telemetry;
+    }
 
-                for(int i = 0; i < 2; i++){
-                    this.previousState [i] = this.currentState [i];
-                }
-                // Update state
-                this.odometry.updatePosition();
-                this.currentState [0] = odometry.getXCoordinate();
-                this.currentState [1] = odometry.getYCoordinate();
-                // Add radians later
-                for(int i = 0; i < 2; i++) {
-                    this.delta [i] = this.targetState [i] - this.currentState [i];
+    @Override
+    public void run() {
 
-                    this.derivative [i] = (this.currentState [i] - this.previousState [i]) / timer.seconds(); // in / sec
-                    this.integral [i] *= integralDecayConst;
-                    this.integral [i] += this.delta [i] * timer.seconds();
+    }
 
-                }
-                timer.reset();
+    private boolean iteratePID(){ // Just P for now, states represnted by x, y, angle relative to horizontal right
+        // Update state and delta
+        this.odometry.updatePosition();
+        this.odometry.updateTime();
+
+        this.currentState [0] = odometry.getXCoordinate();
+        this.currentState [1] = odometry.getYCoordinate();
+        this.currentState [2] = odometry.getRotationRadians();
+        for(int i = 0; i < 3; i++){
+            delta [i] = this.targetState [i] - this.currentState [i];
+        }
+        if(delta[0]*delta[0] + delta[1]*delta[1] < tolerance){
+            return true;
+        }
+
+        // If not within tolerance of position
+        double maxInputValue = 0.0;
+        for(int i = 0; i < 3; i++){
+            delta [i] *= P [i]; // Multiply by gain
+
+            if(Math.abs(delta [i]) > maxInputValue){
+                maxInputValue = delta [i];
             }
         }
+        for(int i = 0; i < 3; i++){
+            delta [i] /= maxInputValue;
+        }
+
+        this.drive.FieldOrientedDrive(delta [0], delta [1], 0.0, currentState[2], this.telemetry);
+
+        return false;
     }
-
-    public void driveOnPath(){
-
-    }
-
-
 }
