@@ -64,52 +64,51 @@ public class EncoderOutputs extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         drive = new MecanumDrive(hardwareMap, telemetry);
-        odometry = new Odometry(hardwareMap, 0, new Vector2(0, 0));
+//        odometry = new Odometry(hardwareMap, 0, new Vector2(0, 0));
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
-
-        drive.BL.setPower(1.0);
-        drive.BR.setPower(1.0);
-        drive.FL.setPower(1.0);
-        drive.FR.setPower(1.0);
 
         waitForStart();
 
         if (isStopRequested()) return;
 
-        while (opModeIsActive()) {
-
-//            drive.NormalDrive(1, 1, 0, telemetry);
-
-            odometry.updatePosition();
-            odometry.updateTime();
-
-            logGamepad(telemetry, gamepad1, "gamepad1");
-//            logGamepad(telemetry, gamepad2, "gamepad2");
-
-            double bx = odometry.getXCoordinate();
-            double by = odometry.getYCoordinate();
-            double l = 5;
-
-            double[] bxPoints = { l, -l, -l, l };
-            double[] byPoints = { l, l, -l, -l };
-            rotatePoints(bxPoints, byPoints, odometry.getRotationRadians());
-            for (int i = 0; i < 4; i++) {
-                bxPoints[i] += bx;
-                byPoints[i] += by;
-            }
-
-            TelemetryPacket packet = new TelemetryPacket();
-            packet.fieldOverlay()
-                    .setStrokeWidth(1)
-                    .fillPolygon(bxPoints, byPoints);
-            dashboard.sendTelemetryPacket(packet);
-
-            telemetry.update();
-
-            sleep(20);
+        while(opModeIsActive()){
+            drive.NormalDrive(1.0, 0.0, 0.0, telemetry);
         }
+
+//        while (opModeIsActive()) {
+//
+////            drive.NormalDrive(1, 1, 0, telemetry);
+//
+////            odometry.updatePosition();
+////            odometry.updateTime();
+//
+//            logGamepad(telemetry, gamepad1, "gamepad1");
+////            logGamepad(telemetry, gamepad2, "gamepad2");
+//
+//            double bx = odometry.getXCoordinate();
+//            double by = odometry.getYCoordinate();
+//            double l = 5;
+//
+//            double[] bxPoints = { l, -l, -l, l };
+//            double[] byPoints = { l, l, -l, -l };
+//            rotatePoints(bxPoints, byPoints, odometry.getRotationRadians());
+//            for (int i = 0; i < 4; i++) {
+//                bxPoints[i] += bx;
+//                byPoints[i] += by;
+//            }
+//
+//            TelemetryPacket packet = new TelemetryPacket();
+//            packet.fieldOverlay()
+//                    .setStrokeWidth(1)
+//                    .fillPolygon(bxPoints, byPoints);
+//            dashboard.sendTelemetryPacket(packet);
+//
+//            telemetry.update();
+//
+//            sleep(20);
+//        }
 
     }
     private static void rotatePoints(double[] xPoints, double[] yPoints, double angle) {

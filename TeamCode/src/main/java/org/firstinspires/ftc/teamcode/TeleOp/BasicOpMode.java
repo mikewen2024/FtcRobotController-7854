@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -40,8 +41,7 @@ public class BasicOpMode extends OpMode {
 
     // Hardware
     public MecanumDrive drive;
-    public Odometry odometry;
-
+//    public Odometry odometry;
 
     // Auxillary variables (low pass, PID, etc...)
     public double [] previousInputs;
@@ -54,7 +54,7 @@ public class BasicOpMode extends OpMode {
 
         // Drivetrain
         drive = new MecanumDrive(hardwareMap, telemetry);
-        odometry = new Odometry(hardwareMap, 0.0, new Vector2(0.0, 0.0));
+//        odometry = new Odometry(hardwareMap, 0.0, new Vector2(0.0, 0.0));
 
         // Aux data
         previousInputs = new double [3]; // left stick x, left stick y, right stick x
@@ -66,26 +66,31 @@ public class BasicOpMode extends OpMode {
 
     @Override
     public void loop() {
-        odometry.updatePosition();
-        odometry.updateTime();
+
+        drive.FieldOrientedDrive(1.0, 0.0, 0.0, 0.0, telemetry);
+
+//        odometry.updatePosition();
+//        odometry.updateTime();
+
+//        drive.NormalDrive(1.0, 0.0, 0.0, telemetry);
 
         // Handle controller inputs with low pass filter and input into drive
-        if(gamepad1.left_bumper){
-            drive.FieldOrientedDrive(previousInputs [0] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_x,
-                    - previousInputs [1] * LOW_PASS_LATENCY - (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_y,
-                    previousInputs [2] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.right_stick_x,
-                    odometry.getRotationRadians(), telemetry);
-            telemetry.addLine("Field Oriented");
-        }else{
-            drive.NormalDrive(previousInputs [0] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_x,
-                    - previousInputs [1] * LOW_PASS_LATENCY - (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_y,
-                    previousInputs [2] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.right_stick_x,
-                    telemetry);
-        }
+//        if(gamepad1.left_bumper){
+//            drive.FieldOrientedDrive(previousInputs [0] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_x,
+//                    - previousInputs [1] * LOW_PASS_LATENCY - (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_y,
+//                    previousInputs [2] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.right_stick_x,
+//                    odometry.getRotationRadians(), telemetry);
+//            telemetry.addLine("Field Oriented");
+//        }else{
+//            drive.NormalDrive(previousInputs [0] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_x,
+//                    - previousInputs [1] * LOW_PASS_LATENCY - (1.0 - LOW_PASS_LATENCY) * gamepad1.left_stick_y,
+//                    previousInputs [2] * LOW_PASS_LATENCY + (1.0 - LOW_PASS_LATENCY) * gamepad1.right_stick_x,
+//                    telemetry);
+//        }
 
-        previousInputs [0] = gamepad1.left_stick_x;
-        previousInputs [1] = gamepad1.left_stick_y;
-        previousInputs [2] = gamepad1.right_stick_x;
+//        previousInputs [0] = gamepad1.left_stick_x;
+//        previousInputs [1] = gamepad1.left_stick_y;
+//        previousInputs [2] = gamepad1.right_stick_x;
 
 //        telemetry();
     }

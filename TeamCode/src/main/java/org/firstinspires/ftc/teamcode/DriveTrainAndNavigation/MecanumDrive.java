@@ -39,8 +39,6 @@ public class MecanumDrive {
         BL = hardwareMap.get(DcMotorEx.class, "BL");
         BR = hardwareMap.get(DcMotorEx.class, "BR");
 
-
-
         FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         BL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -50,7 +48,6 @@ public class MecanumDrive {
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
 
 //        FL.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(0.5, 0.25, 0.25, 0));
 //        FR.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(0.5, 0.25, 0.25, 0));
@@ -77,7 +74,7 @@ public class MecanumDrive {
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]) / 2.0;
         if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / maxPowerLevel;
+                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
             }
         }
 
@@ -116,7 +113,7 @@ public class MecanumDrive {
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]);
         if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / maxPowerLevel;
+                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
             }
         }
 
