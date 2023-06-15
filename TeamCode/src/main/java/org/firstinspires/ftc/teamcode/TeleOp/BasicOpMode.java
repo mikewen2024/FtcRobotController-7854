@@ -78,7 +78,7 @@ public class BasicOpMode extends OpMode {
         odometry.updatePosition();
         odometry.updateTime();
 
-        telemetry.addData("Left", odometry.leftTicks);
+        telemetry.addData("\nPID ======================\nLeft", odometry.leftTicks);
         telemetry.addData("Right", odometry.rightTicks);
         telemetry.addData("Front", odometry.topTicks);
 
@@ -123,7 +123,7 @@ public class BasicOpMode extends OpMode {
 
         telemetry.addData("x delta input", delta [0]);
         telemetry.addData("y delta input", delta [1]);
-        telemetry.addData("angle delta input", delta [2]);
+        telemetry.addData("angle delta input\n==========================\n", delta [2]);
 
 //        drive.FieldOrientedDrive(delta [0] * P [0],
 //                delta [1] * P [1],
