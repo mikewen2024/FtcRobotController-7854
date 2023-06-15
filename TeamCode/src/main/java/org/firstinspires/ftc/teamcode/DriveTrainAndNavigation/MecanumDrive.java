@@ -28,7 +28,7 @@ public class MecanumDrive {
     public static final double [] FORWARD = {1.0, 1.0, 1.0, -1.0};
     public static final double [] RIGHT = {1.0, -1.0, -1.0, -1.0};
     public static final double [] CLOCKWISE = {1.0, -1.0, 1.0, 1.0};
-    public static final double POWER_MULTIPLIER = 0.75;
+    public static final double POWER_MULTIPLIER = 1.0;
 
     // Inputs and power constraints
     private double [] motorInputs;
@@ -66,15 +66,15 @@ public class MecanumDrive {
             motorInputs [i] = ((FORWARD [i] * y) + (RIGHT [i] * x) + (CLOCKWISE [i] * rotation));
 
             if(Math.abs(motorInputs [i]) > maxPowerLevel){
-                maxPowerLevel = motorInputs [i];
+                maxPowerLevel = Math.abs(motorInputs [i]);
             }
         }
 
         // Normalize power inputs within envelope, dead zone 0.2
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]) / 2.0;
-        if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
+        if(powerEnvelope > 0.2 && maxPowerLevel > 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
+                motorInputs [i] *=  POWER_MULTIPLIER / maxPowerLevel;
             }
         }
 
@@ -98,26 +98,26 @@ public class MecanumDrive {
         double maxPowerLevel = 0.0;
 
         // Rotate x and y by negative of angle
-        double newX = x*Math.cos(-angle) + y*Math.sin(-angle);
-        double newY = -x*Math.sin(-angle) + y*Math.cos(angle);
+        double newX = x*Math.cos(angle - (Math.PI / 2.0)) + y*Math.sin(angle - (Math.PI / 2.0));
+        double newY = -x*Math.sin(angle - (Math.PI / 2.0)) + y*Math.cos(angle - (Math.PI / 2.0));
 
         // Linear combination of drive vectors
         for(int i = 0; i < 4; i++){
             motorInputs [i] = ((FORWARD [i] * newY) + (RIGHT [i] * newX) + (CLOCKWISE [i] * rotation));
             if(Math.abs(motorInputs [i]) > maxPowerLevel){
-                maxPowerLevel = motorInputs [i];
+                maxPowerLevel = Math.abs(motorInputs [i]);
             }
         }
 
         // Normalize power inputs within envelope, dead zone 0.2
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]);
-        if(powerEnvelope > 0.2 && maxPowerLevel <= 1.0){
+        if(powerEnvelope > 0.2 && maxPowerLevel > 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / powerEnvelope;
+                motorInputs [i] *=  POWER_MULTIPLIER / maxPowerLevel;
             }
         }
 
-        telemetry.addData("Power envelope", powerEnvelope);
+        telemetry.addData("\nPower envelope", powerEnvelope);
         telemetry.addData("Max Power", maxPowerLevel);
         telemetry.addData("X", newX);
         telemetry.addData("Y", newY);

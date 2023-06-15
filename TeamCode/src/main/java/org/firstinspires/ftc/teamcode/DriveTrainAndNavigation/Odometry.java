@@ -21,6 +21,7 @@ public class Odometry { // TEMPORARY
 
     public Vector2 position = new Vector2();
     Vector2 velocity = new Vector2();
+    public double angularVelocity = 0.0;
 
     int lastLeftTicks = 0;
     int deltaLeftTicks = 0;
@@ -55,12 +56,6 @@ public class Odometry { // TEMPORARY
 
         horizontalEncoder = hardwareMap.get(DcMotorEx.class, "BR");
 //        horizontalEncoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        leftEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        horizontalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
 
         this.rotationRadians = startingAngleRadians;
         this.position = startingPosition;
@@ -118,6 +113,7 @@ public class Odometry { // TEMPORARY
         // 1 - 7 Restored +1/2 rotation trapezoidal integration method
         // angles
         deltaRadians = -2 * getDeltaRotation(leftDistanceMoved, rightDistanceMoved);
+        angularVelocity = deltaRadians / deltaTime;
         rotationRadians += .5 * deltaRadians;
 
         forwardMovement = (leftDistanceMoved + rightDistanceMoved) / 2.0;
@@ -142,8 +138,8 @@ public class Odometry { // TEMPORARY
 //        }
 
         // 1 - 7 Changed signs since was reversed, had to re-swap variables
-        this.position.x -= netX;
-        this.position.y -= netY;
+        this.position.x += netX;
+        this.position.y += netY;
 
 //        // Temporary
 //        AutonomousNew.currentPosition[0] += netX;
@@ -155,8 +151,6 @@ public class Odometry { // TEMPORARY
 
         velocity.x = netX / deltaTime;
         velocity.y = netY / deltaTime;
-
-
     }
 
     public void setPostion(Vector2 pos) {
@@ -168,7 +162,7 @@ public class Odometry { // TEMPORARY
     }
 
     public double getDeltaRotation(double leftChange, double rightChange) {
-        return (rightChange - leftChange) / lateralWheelDistance;
+        return -(rightChange - leftChange) / lateralWheelDistance;
     }
 
     public double getXCoordinate() {
@@ -190,7 +184,8 @@ public class Odometry { // TEMPORARY
     public Vector2 getVelocity() {
         return velocity;
     }
-    public void resetEncoders() {
+
+        public void resetEncoders() {
         leftEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         horizontalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
