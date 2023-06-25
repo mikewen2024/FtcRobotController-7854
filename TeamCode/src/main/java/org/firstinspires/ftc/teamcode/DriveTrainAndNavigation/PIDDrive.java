@@ -1,92 +1,122 @@
 package org.firstinspires.ftc.teamcode.DriveTrainAndNavigation;
 
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class PIDDrive{
     // 6-14-23 Tuned for Mayhem '22-'23 bot w/ only bottom half,
-
-    // Constant vars
-    double [] P = {0.3, 0.3, -0.5};
-    double [] I = {0.20, 0.20, -0.03};
-    final double integralDecay = 0.95;
-    double [] D = {0.025, 0.025, -0.015};
-
-    // Navigation vars
-    double [] delta = {0.0, 0.0, 0.0};
-    double [] targetState = {0.0, 0.0, 0.0};
-    double [] cumulativeError = {0.0, 0.0, 0.0};
-
-    // Auxillary object references
     private Odometry odometry;
     private Telemetry telemetry;
 
-    public PIDDrive (double [] targetState, Odometry odometry, Telemetry telemetry){ // ,x y, angle
-        for(int i = 0; i < 3; i++){
-            this.targetState [i] = targetState [i];
-        }
+    // Auxillary variables (low pass, PID, etc...), currently hardcoded since no real need to do otherwise
+    public double [] previousInputs;
+    public static final double LOW_PASS_LATENCY = 0.5;
+    private TelemetryPacket telemetryPacket;
+
+    // PID
+    double [] P = {0.15, 0.15, -1.0};
+    double [] I = {0.4, 0.4, -0.075};
+    final double integralDecay = 0.95;
+    double [] D = {0.1, 0.1, -0.05};
+    double [] D2 = {0.75, 0.75, -0.05};
+    double [] cumulativeError = {0.0, 0.0, 0.0};
+
+    // Navigational variables
+    double [] delta = {0.0, 0.0, 0.0};
+    double [] targetState;
+    double distanceToTarget = 0.0;
+    double lastDistanceToTarget = 0.0;
+
+    public  PIDDrive (Odometry odometry, double targetX, double targetY, double targetRadians, Telemetry telemetry){
         this.odometry = odometry;
         this.telemetry = telemetry;
+
+        this.targetState [0] = targetX;
+        this.targetState [1] = targetY;
+        this.targetState [2] = targetRadians;
     }
 
-    public double [] IteratePID(){ // Yet to tune angle I and D
-        this.odometry.updatePosition();
-        this.odometry.updateTime();
+    public double [] updatePID(){ // Update as often as possible, preferrably every tick
+        // Since "delta" takes into consideration all the PID coefficients and is directly inputted into the drive code, distance to target calculated seperately from delta
+        distanceToTarget = (targetState [0] - odometry.getXCoordinate()) * (targetState [0] - odometry.getXCoordinate());
+        distanceToTarget += (targetState [1] - odometry.getYCoordinate()) * (targetState [1] - odometry.getYCoordinate());
+        distanceToTarget = Math.sqrt(distanceToTarget);
+        telemetry.addData("Distance To Target", distanceToTarget);
 
-        this.telemetry.addData("\nPID ======================\nLeft", this.odometry.leftTicks);
-        this.telemetry.addData("Right", this.odometry.rightTicks);
-        this.telemetry.addData("Front", this.odometry.topTicks);
+        odometry.updatePosition();
 
-        this.telemetry.addData("\nx", this.odometry.getXCoordinate());
-        this.telemetry.addData("y", this.odometry.getYCoordinate());
-        this.telemetry.addData("angle", this.odometry.getRotationDegrees());
+        telemetry.addData("\nPID ======================\nLeft", odometry.leftTicks);
+        telemetry.addData("Right", odometry.rightTicks);
+        telemetry.addData("Front", odometry.topTicks);
 
-        this.telemetry.addData("\nintegral x gain", cumulativeError [0]);
-        this.telemetry.addData("integral y gain", cumulativeError [1]);
+        telemetry.addData("\nx", odometry.getXCoordinate());
+        telemetry.addData("y", odometry.getYCoordinate());
+        telemetry.addData("angle", odometry.getRotationDegrees());
 
-        // Proportional Gain
-        this.delta [0] = (this.targetState [0] - this.odometry.getXCoordinate()) * P [0];
-        this.delta [1] = (this.targetState [1] - this.odometry.getYCoordinate()) * P [1];
-        // Angle Proportional Gain
-        if(Math.abs(this.targetState [2] - (this.odometry.getRotationRadians() % (2.0 * Math.PI))) < Math.PI) {
-            this.delta [2] = (this.targetState [2] - (this.odometry.getRotationRadians() % (2.0 * Math.PI))) * P [2];
+        telemetry.addData("\nintegral x gain", cumulativeError [0]);
+        telemetry.addData("integral y gain", cumulativeError [1]);
+        telemetry.addData("angular y gain", cumulativeError [2]);
+
+        // Proportional component, x and y
+        delta [0] = (targetState [0] - odometry.getXCoordinate()) * P [0];
+        delta [1] = (targetState [1] - odometry.getYCoordinate()) * P [1];
+        // Proportional component, angle
+        if(Math.abs(targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))) < Math.PI) {
+            delta [2] = (targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))) * P [2];
         }else{
-            this.delta [2] = (this.targetState [2] + this.odometry.getRotationRadians() % (2.0 * Math.PI) - (2.0 * Math.PI))  * P [2];
+            delta [2] = (targetState [2] + odometry.getRotationRadians() % (2.0 * Math.PI) - (2.0 * Math.PI))  * P [2];
         }
 
-        // Integral Gain
-        this.cumulativeError [0] += I [0] * delta [0];
-        this.cumulativeError [1] += I [0] * delta [1];
-        this.delta [0] += this.cumulativeError [0];
-        this.delta [1] += this.cumulativeError [1];
+        // Integral component independently calculated, then added to delta, since "delta" has P and D components added already
+        cumulativeError [0] += I [0] * delta [0];
+        cumulativeError [1] += I [1] * delta [1];
+        cumulativeError [2] += I [2] * ((targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))));
 
-        // Derivative Gain
-        this.delta [0] -= this.odometry.getVelocity().x * D [0];
-        this.delta [1] -= this.odometry.getVelocity().y * D [1];
+        // Will slow robot more by increasing damping term (P term) on approach to target for x and y
+        // Meant to solve issue of integral term building up too much when robot starts far away from target, causing robot overshoot
+        if(distanceToTarget - lastDistanceToTarget < 0.0){ // If approaching target
+            // Power profiling on approach
+            double XYDterm = (0.9 / (1 + Math.exp(distanceToTarget - 15))) + 0.1;
+            delta [0] -= odometry.getVelocity().x * XYDterm;
+            delta [1] -= odometry.getVelocity().y * XYDterm;
+        }else{ // If overshooting target
+            // Overshoot handled here (will affect first tick leaving a target point to go to next target)
+            delta [0] -= odometry.getVelocity().x * D2 [0];
+            delta [1] -= odometry.getVelocity().y * D2 [1];
+        }
 
-        // Made mistake in initial testing w/ multiplying P, since already tuned will replicate steps here
-        this.delta [0] *= P [0];
-        this.delta [1] *= P[1];
-        this.delta [2] *= Math.abs(P [2]);
+        delta [2] += odometry.angularVelocity * D [2];
 
-        // Normalize inputs to 1.0
+        delta [0] += cumulativeError [0];
+        delta [1] += cumulativeError [1];
+        delta [2] += cumulativeError [2];
+
         double maxInputValue = 0.0;
+        delta [0] *= P [0];
+        delta [1] *= P [0];
+        delta [2] *= P [0];
         for(double num : delta){
             if (Math.abs(num) > maxInputValue) {
                 maxInputValue = Math.abs(num);
             }
         }
-        if(maxInputValue > 1.0){
+        if(maxInputValue > 1.05){
             for(int i = 0; i < 3; i++){
-                this.delta [i] /= maxInputValue;
+                delta [i] *=  0.75 / Math.abs(maxInputValue); // Hardcoded power coefficient to slow down robot during testing
             }
         }
 
-        this.telemetry.addData("x delta input", this.delta [0]);
-        this.telemetry.addData("y delta input", this.delta [1]);
-        this.telemetry.addData("angle delta input\n==========================\n", this.delta [2]);
+        telemetry.addData("x delta input", delta [0]);
+        telemetry.addData("y delta input", delta [1]);
+        telemetry.addData("angle delta input", delta [2]);
+        telemetry.addLine("==========================");
 
-        this.cumulativeError [0] *= integralDecay;
-        this.cumulativeError [1] *= integralDecay;
+        cumulativeError [0] *= integralDecay;
+        cumulativeError [1] *= integralDecay;
+        cumulativeError [2] *= integralDecay;
+
+        lastDistanceToTarget = distanceToTarget;
 
         return this.delta;
     }

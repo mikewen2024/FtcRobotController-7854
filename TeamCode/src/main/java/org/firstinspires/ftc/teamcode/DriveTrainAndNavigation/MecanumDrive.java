@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
+import java.util.ArrayList;
+
 public class MecanumDrive {
     // Motors
     public DcMotorEx FL;
@@ -83,23 +85,34 @@ public class MecanumDrive {
         telemetry.addData("X", x);
         telemetry.addData("Y", y);
 
-        telemetry.addData("FL", motorInputs [2]);
-        telemetry.addData("FR", motorInputs [1]);
-        telemetry.addData("BL", motorInputs [0]);
-        telemetry.addData("BR", motorInputs [3]);
+        telemetry.addData("FL", motorInputs [2] * 1.41);
+        telemetry.addData("FR", motorInputs [1] * 1.41);
+        telemetry.addData("BL", motorInputs [0] * 1.41);
+        telemetry.addData("BR", motorInputs [3] * 1.41);
 
-        BL.setPower( motorInputs [0]);
-        FR.setPower( motorInputs [1]);
-        FL.setPower( motorInputs [2]);
-        BR.setPower( motorInputs [3]);
+        BL.setPower( motorInputs [0] * 2.0);
+        FR.setPower( motorInputs [1] * 2.0);
+        FL.setPower( motorInputs [2] * 2.0);
+        BR.setPower( motorInputs [3] * 2.0);
     }
 
+    // Built-in ow pass for autonomous purposes
+    public double previousX = 0.0;
+    public double previousY = 0.0;
     public void FieldOrientedDrive(double x, double y, double rotation, double angle, Telemetry telemetry){ // Angle of front from horizontal right, meant for controller inputs
         double maxPowerLevel = 0.0;
 
+        // Low pass
+        double lowPassX = 0.05 * x + 0.95 * previousX;
+        double lowPassY = 0.05 * y + 0.95 * previousY;
+
         // Rotate x and y by negative of angle
-        double newX = x*Math.cos(angle - (Math.PI / 2.0)) + y*Math.sin(angle - (Math.PI / 2.0));
-        double newY = -x*Math.sin(angle - (Math.PI / 2.0)) + y*Math.cos(angle - (Math.PI / 2.0));
+        double newX = lowPassX*Math.cos(angle - (Math.PI / 2.0)) + lowPassY*Math.sin(angle - (Math.PI / 2.0));
+        double newY = -lowPassX*Math.sin(angle - (Math.PI / 2.0)) + lowPassY*Math.cos(angle - (Math.PI / 2.0));
+
+        // Update low pass previous variables
+        previousX = x;
+        previousY = y;
 
         // Linear combination of drive vectors
         for(int i = 0; i < 4; i++){
@@ -113,7 +126,7 @@ public class MecanumDrive {
         double powerEnvelope = Math.sqrt(motorInputs[0]*motorInputs[0] + motorInputs[1]*motorInputs[1] + motorInputs[2]*motorInputs[2] + motorInputs[3]*motorInputs[3]);
         if(powerEnvelope > 0.2 && maxPowerLevel > 1.0){
             for(int i = 0; i < 4; i++){
-                motorInputs [i] *=  POWER_MULTIPLIER / maxPowerLevel;
+                motorInputs [i] *=  POWER_MULTIPLIER * 1.41 / maxPowerLevel;
             }
         }
 
@@ -126,14 +139,11 @@ public class MecanumDrive {
         telemetry.addData("FR", motorInputs [1]);
         telemetry.addData("BL", motorInputs [0]);
         telemetry.addData("BR", motorInputs [3]);
+        telemetry.addData("Low pass latency", 0.5);
 
         BL.setPower(motorInputs [0]);
         FR.setPower(motorInputs [1]);
         FL.setPower(motorInputs [2]);
         BR.setPower(motorInputs [3]);
-    }
-
-    public void telemetry(FtcDashboard dashboard) {
-
     }
 }
