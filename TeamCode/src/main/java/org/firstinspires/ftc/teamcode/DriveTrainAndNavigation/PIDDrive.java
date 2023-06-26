@@ -128,4 +128,10 @@ public class PIDDrive{
         // Return values go into FieldOrientedDrive
         return this.delta;
     }
+
+    public void setTargetState(double targetX, double targetY, double targetRadians){
+        this.targetState [0] = targetX;
+        this.targetState [1] = targetY;
+        this.targetState [2] = targetRadians;
+    }
 }
