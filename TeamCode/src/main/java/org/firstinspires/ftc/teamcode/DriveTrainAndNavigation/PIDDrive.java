@@ -44,8 +44,10 @@ public class PIDDrive{
         distanceToTarget = Math.sqrt(distanceToTarget);
         telemetry.addData("Distance To Target", distanceToTarget);
 
+        // UpdateTime is already inside updatePosition method
         odometry.updatePosition();
 
+        // Output data (was used in testing)
         telemetry.addData("\nPID ======================\nLeft", odometry.leftTicks);
         telemetry.addData("Right", odometry.rightTicks);
         telemetry.addData("Front", odometry.topTicks);
@@ -62,8 +64,9 @@ public class PIDDrive{
         delta [0] = (targetState [0] - odometry.getXCoordinate()) * P [0];
         delta [1] = (targetState [1] - odometry.getYCoordinate()) * P [1];
         // Proportional component, angle
-        if(Math.abs(targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))) < Math.PI) {
+        if(Math.abs(targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))) < Math.PI) { // Enables rotation clockwise or counterclockwise, depending on which way is closer to angle target
             delta [2] = (targetState [2] - (odometry.getRotationRadians() % (2.0 * Math.PI))) * P [2];
+            // Needs % statement since angle will likely go over 360˚
         }else{
             delta [2] = (targetState [2] + odometry.getRotationRadians() % (2.0 * Math.PI) - (2.0 * Math.PI))  * P [2];
         }
@@ -76,7 +79,7 @@ public class PIDDrive{
         // Will slow robot more by increasing damping term (P term) on approach to target for x and y
         // Meant to solve issue of integral term building up too much when robot starts far away from target, causing robot overshoot
         if(distanceToTarget - lastDistanceToTarget < 0.0){ // If approaching target
-            // Power profiling on approach
+            // Profiles d term on approach (jacks up term to increase "braking" gain)
             double XYDterm = (0.9 / (1 + Math.exp(distanceToTarget - 15))) + 0.1;
             delta [0] -= odometry.getVelocity().x * XYDterm;
             delta [1] -= odometry.getVelocity().y * XYDterm;
@@ -85,13 +88,15 @@ public class PIDDrive{
             delta [0] -= odometry.getVelocity().x * D2 [0];
             delta [1] -= odometry.getVelocity().y * D2 [1];
         }
-
+        // Turning doesn't have have the same overshooting issues, so just do velocity gain calculations
         delta [2] += odometry.angularVelocity * D [2];
 
+        // Add cumulative error up seperately from PID, since P and D components are reset every tick
         delta [0] += cumulativeError [0];
         delta [1] += cumulativeError [1];
         delta [2] += cumulativeError [2];
 
+        // Since inputting gain values into FieldOrientedDrive (made to take inputs from -1 to 1), need to normalize magnitude of x, y, angle inputs
         double maxInputValue = 0.0;
         delta [0] *= P [0];
         delta [1] *= P [0];
@@ -112,12 +117,15 @@ public class PIDDrive{
         telemetry.addData("angle delta input", delta [2]);
         telemetry.addLine("==========================");
 
+        // Make sure integral term doesn't go out of control
         cumulativeError [0] *= integralDecay;
         cumulativeError [1] *= integralDecay;
         cumulativeError [2] *= integralDecay;
 
+        // For calculating speed of target approach
         lastDistanceToTarget = distanceToTarget;
 
+        // Return values go into FieldOrientedDrive
         return this.delta;
     }
 }
