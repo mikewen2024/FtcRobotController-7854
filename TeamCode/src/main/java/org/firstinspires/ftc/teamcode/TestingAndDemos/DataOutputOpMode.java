@@ -7,6 +7,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.MecanumDrive;
+import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.Odometry;
+import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.Vector2;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,7 +19,10 @@ import java.lang.reflect.Modifier;
  * Demo for data output to dashbaord in graphs
  */
 @Autonomous
-public class GamepadTestOpMode extends LinearOpMode {
+public class DataOutputOpMode extends LinearOpMode {
+
+    static MecanumDrive drive;
+    static Odometry odometry;
 
     private static void logGamepad(Telemetry telemetry, Gamepad gamepad, String prefix) {
         telemetry.addData(prefix + "Synthetic",
@@ -34,16 +40,26 @@ public class GamepadTestOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+
+        // START INIT
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
+        // Init and start procedure
+        odometry = new Odometry(hardwareMap, 0, new Vector2(0, 0));
+        drive = new MecanumDrive(hardwareMap, telemetry);
+
+        // Starting odometry thread, but not multithreading rn
+//        odometry.run();
+
         waitForStart();
+        // END INIT
+
 
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
             logGamepad(telemetry, gamepad1, "gamepad1");
-            logGamepad(telemetry, gamepad2, "gamepad2");
             telemetry.update();
 
             sleep(20);

@@ -1,3 +1,7 @@
+package org.firstinspires.ftc.teamcode.DriveTrainAndNavigation;
+
+import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.SplinePath;
+
 import java.util.ArrayList;
 
 public class SectionSpline{
@@ -16,7 +20,8 @@ public class SectionSpline{
    public double [] weights; // For each root
    public double [][] tangents; // For each non-endpoint root
    public double [] coords; // For returning value
-   public SplinePath [] sections; // For getting coordinates from each section
+   public SplinePath[] sections; // For getting coordinates from each section
+	public double [] tangent = {0.0, 0.0};
    
    public SectionSpline(double [][] roots, double weight) { // Weight raw-translated to distance
 	   
@@ -87,8 +92,21 @@ public class SectionSpline{
 	   
 	   return this.sections[sectionNumber].getCoords(localTimeValue);
    }
-   
-   public void adjustPoint(int index, double slope, double weight) { // Weights symmetric on both sides for now
-	   
+
+   public double getTangentAngle(double t){ // Returns angle
+	   this.tangent [0] = this.getState(t + 0.001)[0] - this.getState(t - 0.001)[0];
+	   this.tangent [1] = this.getState(t + 0.001)[1] - this.getState(t - 0.001)[1];
+
+	   if(this.tangent [0] > 0.0){
+		   if(this.tangent[0] == 0){
+			   this.tangent[0] += 0.01;
+		   }
+		   return Math.atan(this.tangent [1] / this.tangent [0]);
+	   }else{
+		   if(this.tangent[0] == 0){
+			   this.tangent[0] += 0.01;
+		   }
+		   return Math.PI + Math.atan(this.tangent [1] / this.tangent [0]);
+	   }
    }
 }

@@ -46,10 +46,10 @@ public class MecanumDrive {
         BL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         BR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
 //        FL.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(0.5, 0.25, 0.25, 0));
 //        FR.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(0.5, 0.25, 0.25, 0));

@@ -1,3 +1,5 @@
+package org.firstinspires.ftc.teamcode.DriveTrainAndNavigation;
+
 public class SplinePath {
     public double [] coords = {0.0, 0.0};
     public double [][][] iteratorMatrix; // Use to encapsulate nodes, for n roots, n by n matrix

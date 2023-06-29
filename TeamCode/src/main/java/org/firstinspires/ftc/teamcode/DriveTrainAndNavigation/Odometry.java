@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.DriveTrainAndNavigation;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -16,9 +18,9 @@ public class Odometry implements Runnable{ // "implements runnable" is for multi
     //All variables mentioned here will be addessed as "this.VARIABLE_NAME"
 
     //Constants
-    double inPerTick = 0.0010819; // 1 - 7 recalibrated distances\\
-    double verticalWheelDistance = 4.0; // 1 - 7 recalibrated dimensions
-    double lateralWheelDistance = 12; // 1 - 7 recalibrated dimensions
+    double inPerTick = 0.00220075; // 1 - 7 recalibrated distances\\
+    double verticalWheelDistance = 5.0; // 1 - 7 recalibrated dimensions
+    double lateralWheelDistance = 12.50; // 1 - 7 recalibrated dimensions
 
 
     //Tracking Time
@@ -127,7 +129,7 @@ public class Odometry implements Runnable{ // "implements runnable" is for multi
         topDistanceMoved = inPerTick * deltaTopTicks;
 
         // calculate change in angles
-        deltaRadians = -2 * getDeltaRotation(leftDistanceMoved, rightDistanceMoved);
+        deltaRadians = -getDeltaRotation(leftDistanceMoved, rightDistanceMoved);
         angularVelocity = deltaRadians / deltaTime;
         rotationRadians += .5 * deltaRadians; //Finding integral part 1
 
@@ -227,16 +229,21 @@ public class Odometry implements Runnable{ // "implements runnable" is for multi
         return velocity;
     }
 
-// Will be used later for multithreading
 
     // For multithreading
-    public boolean OpModeIsActive;
+    public boolean OpModeIsActive = true;
     @Override
     public void run() { // Run, ideally at a regulated rate, the odometry algorithm
         // Will assume odometry object is already initialized
         // OpModeIsActive variable for emergency stop
         while(OpModeIsActive){
+
             this.updatePosition();
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

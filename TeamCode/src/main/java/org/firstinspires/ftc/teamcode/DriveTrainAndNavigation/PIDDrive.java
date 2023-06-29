@@ -15,16 +15,16 @@ public class PIDDrive{
     private TelemetryPacket telemetryPacket;
 
     // PID
-    double [] P = {0.15, 0.15, -1.0};
-    double [] I = {0.4, 0.4, -0.075};
+    double [] P = {0.2, 0.2, -1.0};
+    double [] I = {0.1, 0.1, -0.15};
     final double integralDecay = 0.95;
-    double [] D = {0.1, 0.1, -0.05};
-    double [] D2 = {0.75, 0.75, -0.05};
+    double [] D = {0.35, 0.35, 0.25};
+    double [] D2 = {0.0, 0.0, 0.0};
     double [] cumulativeError = {0.0, 0.0, 0.0};
 
     // Navigational variables
     double [] delta = {0.0, 0.0, 0.0};
-    double [] targetState;
+    double [] targetState = {0.0, 0.0, 0.0};
     double distanceToTarget = 0.0;
     double lastDistanceToTarget = 0.0;
 
@@ -56,6 +56,10 @@ public class PIDDrive{
         telemetry.addData("y", odometry.getYCoordinate());
         telemetry.addData("angle", odometry.getRotationDegrees());
 
+        telemetry.addData("\nTarget x", this.targetState [0]);
+        telemetry.addData("Target y", this.targetState [1]);
+        telemetry.addData("Target angle", this.targetState [2] * 180.0 / Math.PI);
+
         telemetry.addData("\nintegral x gain", cumulativeError [0]);
         telemetry.addData("integral y gain", cumulativeError [1]);
         telemetry.addData("angular y gain", cumulativeError [2]);
@@ -80,13 +84,13 @@ public class PIDDrive{
         // Meant to solve issue of integral term building up too much when robot starts far away from target, causing robot overshoot
         if(distanceToTarget - lastDistanceToTarget < 0.0){ // If approaching target
             // Profiles d term on approach (jacks up term to increase "braking" gain)
-            double XYDterm = (0.9 / (1 + Math.exp(distanceToTarget - 15))) + 0.1;
-            delta [0] -= odometry.getVelocity().x * XYDterm;
-            delta [1] -= odometry.getVelocity().y * XYDterm;
+            double XYDterm = 0.0 * ((0.9 / (1 + Math.exp(distanceToTarget - 15))) + 0.1);
+            delta [0] -= odometry.getVelocity().x * D [0];
+            delta [1] -= odometry.getVelocity().y * D [1];
         }else{ // If overshooting target
             // Overshoot handled here (will affect first tick leaving a target point to go to next target)
-            delta [0] -= odometry.getVelocity().x * D2 [0];
-            delta [1] -= odometry.getVelocity().y * D2 [1];
+            delta [0] -= odometry.getVelocity().x * D [0];
+            delta [1] -= odometry.getVelocity().y * D [1];
         }
         // Turning doesn't have have the same overshooting issues, so just do velocity gain calculations
         delta [2] += odometry.angularVelocity * D [2];

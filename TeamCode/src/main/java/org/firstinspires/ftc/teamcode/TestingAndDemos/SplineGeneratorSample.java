@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.TestingAndDemos;
 
+import org.firstinspires.ftc.teamcode.DriveTrainAndNavigation.SplinePath;
+
 public class SplineGeneratorSample {
     public static void main(String [] args) {
         double [][] roots = {
