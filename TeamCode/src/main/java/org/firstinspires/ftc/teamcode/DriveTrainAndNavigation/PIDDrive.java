@@ -22,6 +22,15 @@ public class PIDDrive{
     double [] D2 = {0.0, 0.0, 0.0};
     double [] cumulativeError = {0.0, 0.0, 0.0};
 
+    /* For non-spline-path driving
+    double [] P = {0.15, 0.15, -1.0};
+    double [] I = {0.4, 0.4, -0.075};
+    final double integralDecay = 0.95;
+    double [] D = {0.1, 0.1, -0.05};
+    double [] D2 = {0.75, 0.75, -0.05};
+    double [] cumulativeError = {0.0, 0.0, 0.0};
+    */
+
     // Navigational variables
     double [] delta = {0.0, 0.0, 0.0};
     double [] targetState = {0.0, 0.0, 0.0};
