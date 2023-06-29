@@ -11,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.concurrent.TimeUnit;
 @Config
-public class Odometry implements Runnable{ // "implements runnable" is for multithreading
+public class ArcOdometry implements Runnable{ // Odometry class but with arcs, modifies relative x and y calculations
 
     //All variables mentioned here will be addessed as "this.VARIABLE_NAME"
 
@@ -83,8 +83,10 @@ public class Odometry implements Runnable{ // "implements runnable" is for multi
     double prevRight = 0.0;
     double prevFront = 0.0;
 
+    // For arc-based odometry, if angle change is too small, will need to revert to linear approximation due to overflow errors
+    public static final double ARC_ODOMETRY_ANGLE_THRESHOLD = 0.01; // Radians
 
-    public Odometry(HardwareMap hardwareMap, double startingAngleRadians, Vector2 startingPosition) {
+    public ArcOdometry(HardwareMap hardwareMap, double startingAngleRadians, Vector2 startingPosition) {
         OpModeIsActive = true;
         elapsedTime = new ElapsedTime();
 
@@ -129,23 +131,43 @@ public class Odometry implements Runnable{ // "implements runnable" is for multi
         // calculate change in angles
         deltaRadians = -2 * getDeltaRotation(leftDistanceMoved, rightDistanceMoved);
         angularVelocity = deltaRadians / deltaTime;
-        rotationRadians += .5 * deltaRadians; //Finding integral part 1
+        rotationRadians += .5 * deltaRadians; // Trapezoidal approximation
 
-        //average left and right encoder distance
-        forwardMovement = (leftDistanceMoved + rightDistanceMoved) / 2.0;
-        //Actual horizontal movement without rotational influence
-        trueLateralMovement = topDistanceMoved - deltaRadians * verticalWheelDistance;
+        // Arc-based odometry differs in forward and lateral movement calculation
+        // Assumes circular arc movement, localize to robot x and y, then input as forward and lateral movement
+        if(deltaRadians < ARC_ODOMETRY_ANGLE_THRESHOLD) { // Case for resorting to linear approximations w/ too small angle changes
+            forwardMovement = (leftDistanceMoved + rightDistanceMoved) / 2.0;
+            //Actual horizontal movement without rotational influence
+            trueLateralMovement = topDistanceMoved - deltaRadians * verticalWheelDistance;
 
-        //assigning sin and cos of rotation
-        rotSin = Math.sin(rotationRadians);
-        rotCosine = Math.cos(rotationRadians);
+            //assigning sin and cos of rotation
+            rotSin = Math.sin(rotationRadians);
+            rotCosine = Math.cos(rotationRadians);
 
-        //Calculating change X and Y position of robot
-        netX = forwardMovement * rotCosine - trueLateralMovement * rotSin;
-        netY = forwardMovement * rotSin + trueLateralMovement * rotCosine;
+            //Calculating change X and Y position of robot
+            netX = forwardMovement * rotCosine - trueLateralMovement * rotSin;
+            netY = forwardMovement * rotSin + trueLateralMovement * rotCosine;
 
-        rotationRadians += .5 * deltaRadians; //Finding integral part 2
+            rotationRadians += .5 * deltaRadians; // Trapezoidal approximation
+        }else{ // Arc approximation
+            // Note: turn radius for forward movement is (L + R) / (2 * ∆radians)
+            // Radius for front wheel component here (2nd component) is kinda sketchy, placeholder turn radius
+            double turnRadius = (leftDistanceMoved + rightDistanceMoved) / (2.0 * deltaRadians);
 
+            forwardMovement = Math.sin(rotationRadians) * turnRadius + // Left and right wheels component
+                    (((turnRadius + verticalWheelDistance) * Math.cos(deltaRadians)) - (turnRadius + verticalWheelDistance)); // Front wheel component
+
+            trueLateralMovement = (turnRadius - (turnRadius * Math.cos(deltaRadians))) - // Left and right wheels component
+                    ((turnRadius + verticalWheelDistance) * Math.sin(deltaRadians)); // Front wheel component
+
+            //assigning sin and cos of rotation
+            rotSin = Math.sin(rotationRadians);
+            rotCosine = Math.cos(rotationRadians);
+
+            //Calculating change X and Y position of robot
+            netX = forwardMovement * rotCosine - trueLateralMovement * rotSin;
+            netY = forwardMovement * rotSin + trueLateralMovement * rotCosine;
+        }
         //Calculating final x and y
         //Note: Changed signs since was reversed, had to re-swap variables
         this.position.x += netX;
